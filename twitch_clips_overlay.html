@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Clips Overlay</title>
+    <style>
+        body { background: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        video { width: 80vw; height: auto; border-radius: 10px; }
+        .controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); }
+        button { padding: 10px; margin: 5px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <video id="clipPlayer" controls autoplay></video>
+    <div class="controls">
+        <button onclick="prevClip()">⏮ Previous</button>
+        <button onclick="nextClip()">⏭ Next</button>
+    </div>
+
+    <script>
+        let clips = [];
+        let currentClipIndex = 0;
+        const channelName = "YOUR_TWITCH_USERNAME";
+
+        async function fetchClips() {
+            try {
+                const response = await fetch(`https://twitchtracker.com/${channelName}/clips`);
+                const text = await response.text();
+                const clipUrls = [...text.matchAll(/https:\/\/clips\.twitch\.tv\/[\w-]+/g)].map(match => match[0]);
+                
+                if (clipUrls.length > 0) {
+                    clips = [...new Set(clipUrls)]; // Remove duplicates
+                    loadClip(0);
+                }
+            } catch (error) {
+                console.error("Error fetching clips:", error);
+            }
+        }
+
+        function loadClip(index) {
+            if (clips.length > 0) {
+                document.getElementById('clipPlayer').src = clips[index];
+            }
+        }
+
+        function nextClip() {
+            currentClipIndex = (currentClipIndex + 1) % clips.length;
+            loadClip(currentClipIndex);
+        }
+
+        function prevClip() {
+            currentClipIndex = (currentClipIndex - 1 + clips.length) % clips.length;
+            loadClip(currentClipIndex);
+        }
+
+        fetchClips();
+    </script>
+</body>
+</html>
