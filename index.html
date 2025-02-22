@@ -22,17 +22,33 @@
         let clips = [];
         let currentClipIndex = 0;
         const channelName = "StudyTme";
+        const clientId = "4w28jk5xq776mk1n1p2q9ts1rwqpe5";  // Replace with your Twitch Client ID
+        const accessToken = "s3wif3axybmdh6tdra3awqmx46cm6w"; // Replace with your Twitch Access Token
 
         async function fetchClips() {
             try {
-                const response = await fetch(`https://corsproxy.io/?https://twitchtracker.com/${channelName}/clips`);
-                const text = await response.text();
-                const clipIds = [...text.matchAll(/clips\.twitch\.tv\/(\w+)/g)].map(match => match[1]);
-                
-                if (clipIds.length > 0) {
-                    clips = clipIds.map(id => `https://clips.twitch.tv/embed?clip=${id}&parent=localhost&parent=yourwebsite.com`);
-                    loadClip(0);
-                }
+                // Get user ID from username
+                const userResponse = await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+                    headers: {
+                        "Client-ID": clientId,
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
+                const userData = await userResponse.json();
+                if (!userData.data.length) throw new Error("User not found");
+                const userId = userData.data[0].id;
+
+                // Get top clips for the channel
+                const clipsResponse = await fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&first=10&sort=views`, {
+                    headers: {
+                        "Client-ID": clientId,
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
+                const clipsData = await clipsResponse.json();
+                clips = clipsData.data.map(clip => `https://clips.twitch.tv/embed?clip=${clip.id}&parent=localhost&parent=yourwebsite.com`);
+
+                if (clips.length > 0) loadClip(0);
             } catch (error) {
                 console.error("Error fetching clips:", error);
             }
